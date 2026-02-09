@@ -1,0 +1,23 @@
+paths:
+  data_root: ../data/samples
+  outputs_root: ../outputs
+
+experiment:
+  version: circle_red_green
+
+jacobian:
+  range: 2
+
+evaluation:
+  radius: 2
+
+optimization:
+  max_offset: 2
+  iterations: 200
+  learning_rate: 0.01
+
+tracking:
+  iterations_per_frame: 10
+  video_path: ""
+  target_image: ""
+  jacobian_path: ""

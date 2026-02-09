@@ -1,0 +1,6 @@
+This project refactors internal research code and includes optional support for third-party frameworks.
+No external source repositories are bundled at this moment.
+
+If third-party code is added later:
+- Keep each upstream LICENSE in `third_party/<name>/`.
+- Record source URL and commit hash in `THIRD_PARTY_LICENSES.md`.

@@ -1,0 +1,12 @@
+paths:
+  data_root: ../data/samples
+  outputs_root: ../outputs
+
+experiment:
+  version: circle_red_green
+
+tracking:
+  iterations_per_frame: 10
+  target_image: ../data/samples/circle_red_green/goal/0_0.jpg
+  jacobian_path: ../outputs/jacobian/circle_red_green/jacobian.pkl
+  video_path: ""

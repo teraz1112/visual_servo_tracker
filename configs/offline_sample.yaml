@@ -1,0 +1,23 @@
+paths:
+  data_root: ../data/samples
+  outputs_root: ../outputs
+
+experiment:
+  version: circle_red_green
+
+jacobian:
+  range: 2
+
+evaluation:
+  radius: 2
+
+optimization:
+  max_offset: 2
+  iterations: 50
+  learning_rate: 0.01
+
+tracking:
+  iterations_per_frame: 10
+  video_path: ""
+  target_image: "../data/samples/circle_red_green/goal/0_0.jpg"
+  jacobian_path: "../outputs/jacobian/circle_red_green/jacobian.pkl"

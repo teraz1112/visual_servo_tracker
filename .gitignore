@@ -1,0 +1,40 @@
+# Python cache / build
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Runtime outputs
+outputs/jacobian/
+outputs/graph/
+outputs/optimized/
+outputs/runs/
+
+# Heavy artifacts and logs
+*.pkl
+*.mp4
+*.avi
+*.log
+
+# Secrets
+.env
+*.pem
+*.key
+secrets.*
+
+# Keep only minimal sample data tracked
+!data/samples/**

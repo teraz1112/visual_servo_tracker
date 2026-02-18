@@ -28,6 +28,13 @@ def _calculate_rgb_difference(target_image: np.ndarray, sample_image: np.ndarray
     return diff.reshape(-1, 1)
 
 
+def _prediction_to_int_delta(predicted: np.ndarray) -> tuple[int, int]:
+    values = np.asarray(predicted, dtype=np.float64).reshape(-1)
+    if values.size < 2:
+        raise ValueError(f"Predicted delta has invalid shape: {np.asarray(predicted).shape}")
+    return int(values[0]), int(values[1])
+
+
 def run_video_tracking(
     video_path: str | Path,
     target_image_path: str | Path,
@@ -96,8 +103,9 @@ def run_video_tracking(
                 break
             rgb_difference = _calculate_rgb_difference(target_image, sample_image)
             predicted = np.dot(jacobian, rgb_difference)
-            x -= int(predicted[0])
-            y -= int(predicted[1])
+            dx, dy = _prediction_to_int_delta(predicted)
+            x -= dx
+            y -= dy
 
         x = max(0, min(x, max(0, w - roi_w)))
         y = max(0, min(y, max(0, h - roi_h)))

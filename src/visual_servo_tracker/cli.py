@@ -86,6 +86,39 @@ def _run_offline_pipeline(cfg: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _resolve_tracking_video_inputs(
+    cfg: dict[str, Any],
+    version: str,
+    video_override: str | None,
+    target_override: str | None,
+    jacobian_override: str | None,
+) -> tuple[Path, Path, Path]:
+    data_root = Path(cfg["paths"]["data_root"])
+    outputs_root = Path(cfg["paths"]["outputs_root"])
+    tracking_cfg = cfg.get("tracking", {})
+
+    default_video = data_root / "videos" / f"{version}_sample.mp4"
+    default_target = data_root / version / "goal" / "0_0.jpg"
+    default_jacobian = outputs_root / "jacobian" / version / "jacobian.pkl"
+
+    video_path = (
+        Path(video_override).resolve()
+        if video_override
+        else Path(tracking_cfg.get("video_path") or default_video).resolve()
+    )
+    target_path = (
+        Path(target_override).resolve()
+        if target_override
+        else Path(tracking_cfg.get("target_image") or default_target).resolve()
+    )
+    jacobian_path = (
+        Path(jacobian_override).resolve()
+        if jacobian_override
+        else Path(tracking_cfg.get("jacobian_path") or default_jacobian).resolve()
+    )
+    return video_path, target_path, jacobian_path
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Visual servo tracker CLI")
     parser.add_argument("--verbose", action="store_true", help="Enable debug logs")
@@ -94,6 +127,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     offline = sub.add_parser("offline-run", help="Run Jacobian build + evaluate + optimize pipeline")
     offline.add_argument("--config", type=str, default=None, help="Path to YAML/JSON config")
+
+    offline_track = sub.add_parser(
+        "offline-track-video",
+        help="Run offline pipeline and then start video tracking",
+    )
+    offline_track.add_argument("--config", type=str, default=None, help="Path to YAML/JSON config")
+    offline_track.add_argument("--video", type=str, default=None, help="Video path (optional, fallback to config)")
+    offline_track.add_argument("--target", type=str, default=None, help="Target image path (optional, fallback to config)")
+    offline_track.add_argument("--jacobian", type=str, default=None, help="Jacobian path (optional, fallback to config)")
+    offline_track.add_argument("--iterations-per-frame", type=int, default=None)
 
     prep_fixed = sub.add_parser("prep-fixed", help="Prepare dataset by fixed ROI size")
     prep_fixed.add_argument("--config", type=str, default=None)
@@ -129,9 +172,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     track_video = sub.add_parser("track-video", help="Track object in a video")
     track_video.add_argument("--config", type=str, default=None)
-    track_video.add_argument("--video", type=str, required=True)
-    track_video.add_argument("--target", type=str, required=True)
-    track_video.add_argument("--jacobian", type=str, required=True)
+    track_video.add_argument("--video", type=str, default=None, help="Video path (optional, fallback to config)")
+    track_video.add_argument("--target", type=str, default=None, help="Target image path (optional, fallback to config)")
+    track_video.add_argument("--jacobian", type=str, default=None, help="Jacobian path (optional, fallback to config)")
     track_video.add_argument("--iterations-per-frame", type=int, default=None)
 
     track_basler = sub.add_parser("track-basler", help="Track object with Basler camera")
@@ -182,6 +225,27 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    if args.command == "offline-track-video":
+        result = _run_offline_pipeline(cfg)
+        iter_pf = (
+            args.iterations_per_frame
+            if args.iterations_per_frame is not None
+            else int(cfg["tracking"]["iterations_per_frame"])
+        )
+        video_path, target_path, jacobian_path = _resolve_tracking_video_inputs(
+            cfg,
+            version=cfg["experiment"]["version"],
+            video_override=args.video,
+            target_override=args.target,
+            jacobian_override=args.jacobian,
+        )
+        LOGGER.info("Offline pipeline completed. Starting video tracking...")
+        LOGGER.info("video=%s target=%s jacobian=%s", video_path, target_path, jacobian_path)
+        run_video_tracking(video_path, target_path, jacobian_path, iterations_per_frame=iter_pf)
+        LOGGER.info("Video tracking completed.")
+        LOGGER.info("Optimized result: %s", result["opt_result"]["result_path"])
+        return 0
+
     if args.command == "prep-fixed":
         goal = prepare_dataset_fixed(
             input_image_path=args.input_image,
@@ -230,7 +294,15 @@ def main(argv: list[str] | None = None) -> int:
             if args.iterations_per_frame is not None
             else int(cfg["tracking"]["iterations_per_frame"])
         )
-        run_video_tracking(args.video, args.target, args.jacobian, iterations_per_frame=iter_pf)
+        video_path, target_path, jacobian_path = _resolve_tracking_video_inputs(
+            cfg,
+            version=version,
+            video_override=args.video,
+            target_override=args.target,
+            jacobian_override=args.jacobian,
+        )
+        LOGGER.info("video=%s target=%s jacobian=%s", video_path, target_path, jacobian_path)
+        run_video_tracking(video_path, target_path, jacobian_path, iterations_per_frame=iter_pf)
         return 0
 
     if args.command == "track-basler":

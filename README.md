@@ -53,7 +53,33 @@ python -m visual_servo_tracker.cli offline-run --config configs/offline_sample.y
 - `outputs/optimized/circle_red_green/result.jpg`
 - `outputs/graph/circle_red_green_optimized_graph/*.png`
 
-### 4.2 ステップ実行
+### 4.2 サンプル動画トラッキングまで一括実行
+```powershell
+python -m visual_servo_tracker.cli offline-track-video --config configs/offline_sample.yaml
+```
+または:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run_sample_video_tracking.ps1
+```
+
+実行フロー:
+1. ヤコビアン生成
+2. 評価グラフ生成（normal）
+3. 最適化
+4. 評価グラフ生成（optimized）
+5. サンプル動画 `data/samples/videos/circle_red_green_sample.mp4` で追従開始
+
+操作:
+- 追従ウィンドウで対象の左上をクリック
+- `s` キーで追従開始
+- `q` キーで終了
+
+### 4.3 トラッキングだけ再実行（生成済みヤコビアンを使用）
+```powershell
+python -m visual_servo_tracker.cli track-video --config configs/offline_sample.yaml
+```
+
+### 4.4 ステップ実行
 ```powershell
 python -m visual_servo_tracker.cli build-jacobian --config configs/offline_sample.yaml
 python -m visual_servo_tracker.cli evaluate --config configs/offline_sample.yaml --type normal
@@ -61,7 +87,7 @@ python -m visual_servo_tracker.cli optimize --config configs/offline_sample.yaml
 python -m visual_servo_tracker.cli evaluate --config configs/offline_sample.yaml --type optimized
 ```
 
-### 4.3 スモークテスト
+### 4.5 スモークテスト
 ```powershell
 pytest -q
 ```
@@ -70,10 +96,12 @@ pytest -q
 - 最小サンプル入力は同梱済み:
   - `data/samples/circle_red_green/goal/0_0.jpg`
   - `data/samples/circle_red_green/gap/*.jpg`（`max_gap=2` 相当の最小セット）
+  - `data/samples/videos/circle_red_green_sample.mp4`（動画追従サンプル）
 - 自分のデータを使う場合:
   1. `data/samples/<version>/goal/0_0.jpg` を配置
   2. `data/samples/<version>/gap/<dx>_<dy>.jpg` を配置
-  3. `configs/default.yaml` か `--version` で対象を指定
+  3. （任意）`data/samples/videos/<任意名>.mp4` を配置
+  4. `configs/default.yaml` か `--version` で対象を指定
 
 ## 6) よくあるエラーと対処
 - `FileNotFoundError: ... gap/...jpg`
@@ -84,6 +112,9 @@ pytest -q
 - OpenCVウィンドウが出ない
   - GUI無し環境で実行している可能性
   - `offline-run` はGUI不要、`prep-*`/`track-*` はGUI必須
+- `FileNotFoundError: ... circle_red_green_sample.mp4`
+  - `data/samples/videos/circle_red_green_sample.mp4` が存在するか確認
+  - 別動画を使う場合は `track-video --video <path>` を指定
 - Basler追従で `pypylon` エラー
   - `pip install -r requirements-basler.txt`
 
@@ -97,7 +128,7 @@ visual_servo_tracker/
 │  ├─ tracking_runtime/
 │  └─ tools/
 ├─ configs/               # 実行設定
-├─ data/samples/          # 最小入力サンプル
+├─ data/samples/          # 最小入力サンプル（画像+動画）
 ├─ outputs/               # 実行生成物（.gitignore対象）
 ├─ tests/smoke/           # スモークテスト
 ├─ third_party/           # 外部コード配置場所（必要時）

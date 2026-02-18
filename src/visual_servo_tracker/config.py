@@ -66,6 +66,11 @@ def load_config(config_path: str | Path) -> dict[str, Any]:
     merged = _deep_merge(DEFAULT_CONFIG, user_config)
     merged["paths"]["data_root"] = _resolve_path(path, merged["paths"]["data_root"])
     merged["paths"]["outputs_root"] = _resolve_path(path, merged["paths"]["outputs_root"])
+    tracking = merged.get("tracking", {})
+    for key in ("video_path", "target_image", "jacobian_path"):
+        value = tracking.get(key)
+        if isinstance(value, str) and value.strip():
+            tracking[key] = _resolve_path(path, value)
     return merged
 
 

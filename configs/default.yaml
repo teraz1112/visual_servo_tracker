@@ -18,6 +18,6 @@ optimization:
 
 tracking:
   iterations_per_frame: 10
-  video_path: ""
-  target_image: ""
-  jacobian_path: ""
+  video_path: "../data/samples/videos/circle_red_green_sample.mp4"
+  target_image: "../data/samples/circle_red_green/goal/0_0.jpg"
+  jacobian_path: "../outputs/jacobian/circle_red_green/jacobian.pkl"
